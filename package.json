@@ -1,0 +1,25 @@
+{
+  "name": "vqm-foodwaste-ml-model",
+  "version": "1.0.0",
+  "main": "food_waste_model.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/RevoloerO/vqm-foodwaste-ML-model.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/RevoloerO/vqm-foodwaste-ML-model/issues"
+  },
+  "homepage": "https://github.com/RevoloerO/vqm-foodwaste-ML-model#readme",
+  "description": "",
+  "dependencies": {
+    "csv-parser": "^3.2.0",
+    "fs": "^0.0.1-security"
+  }
+}
