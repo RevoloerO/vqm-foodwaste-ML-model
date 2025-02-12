@@ -19,6 +19,7 @@
   "homepage": "https://github.com/RevoloerO/vqm-foodwaste-ML-model#readme",
   "description": "",
   "dependencies": {
+    "@tensorflow/tfjs": "^4.22.0",
     "csv-parser": "^3.2.0",
     "fs": "^0.0.1-security"
   }

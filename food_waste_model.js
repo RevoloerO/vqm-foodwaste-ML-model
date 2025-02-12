@@ -1,65 +1,112 @@
-const tf = require('@tensorflow/tfjs-node');
-const fs = require('fs');
-const csv = require('csv-parser');
+const tf = require('@tensorflow/tfjs');
+const csvUrl = 'file://C:/Users/quyen/OneDrive/Documents/GitHub/vqm-foodwaste-ML-model/food_waste_data.csv';
 
-// Load data from CSV file
-async function loadCSVData(filePath) {
-    return new Promise((resolve, reject) => {
-        const data = [];
-        fs.createReadStream(filePath)
-            .pipe(csv())
-            .on('data', (row) => {
-                data.push({
-                    year: parseFloat(row.year),
-                    foodWaste: parseFloat(row.foodWaste) // Adjust column names as needed
-                });
-            })
-            .on('end', () => resolve(data))
-            .on('error', (error) => reject(error));
-    });
+// Load and preprocess data
+async function loadData() {
+    try {
+        const data = await tf.data.csv(csvUrl, {
+            hasHeader: true,
+        }).toArray();
+        console.log('Data loaded successfully:', data);
+        // Preprocess data
+        const processedData = data.map(item => {
+            console.log(item); // Log feature values 
+            // Handle missing or invalid data
+            if (!item.year || !item.foodWaste ) {
+                throw new Error('Invalid data');
+            }
+            return {
+                xs: [item.foodWaste], // Replace with actual feature names
+                ys: item.year // Replace with actual label name
+            };
+        });
+
+        return processedData;
+    } catch (error) {
+        console.error('Error loading or processing data:', error);
+        throw error;
+    }
 }
 
-// Prepare data for ML model
-function prepareData(data) {
-    const inputs = data.map(d => d.year);
-    const outputs = data.map(d => d.foodWaste);
-
-    return {
-        xs: tf.tensor2d(inputs, [inputs.length, 1]),
-        ys: tf.tensor2d(outputs, [outputs.length, 1])
-    };
-}
-
-// Train the model
-async function trainModel(xs, ys) {
+// Define the model
+function createModel() {
     const model = tf.sequential();
-    model.add(tf.layers.dense({ units: 1, inputShape: [1] }));
-    model.compile({ loss: 'meanSquaredError', optimizer: 'sgd' });
-    
-    await model.fit(xs, ys, { epochs: 500 });
+    model.add(tf.layers.dense({ units: 32, activation: 'relu', inputShape: [3] })); // Adjust inputShape based on your features
+    model.add(tf.layers.dense({ units: 16, activation: 'relu' }));
+    model.add(tf.layers.dense({ units: 1, activation: 'sigmoid' })); // Adjust output units and activation based on your problem
+
+    model.compile({
+        optimizer: tf.train.adam(),
+        loss: 'binaryCrossentropy', // Adjust loss function based on your problem
+        metrics: ['accuracy']
+    });
+
     return model;
 }
 
-// Predict future food waste
-async function predictFuture(model, year) {
-    const input = tf.tensor2d([year], [1, 1]);
-    const prediction = model.predict(input);
-    return prediction.dataSync()[0];
+// Train the model
+async function trainModel(model, data) {
+    const xs = tf.tensor2d(data.map(item => item.xs));
+    const ys = tf.tensor2d(data.map(item => item.ys), [data.length, 1]);
+
+    await model.fit(xs, ys, {
+        epochs: 50,
+        batchSize: 32,
+        validationSplit: 0.2
+    });
+}
+
+// Evaluate the model
+async function evaluateModel(model, data) {
+    const xs = tf.tensor2d(data.map(item => item.xs));
+    const ys = tf.tensor2d(data.map(item => item.ys), [data.length, 1]);
+
+    const result = model.evaluate(xs, ys);
+    const loss = result[0].dataSync();
+    const accuracy = result[1].dataSync();
+
+    console.log(`Evaluation result - Loss: ${loss}, Accuracy: ${accuracy}`);
+}
+
+// Make predictions with the model
+async function makePredictions(model, newData) {
+    const xs = tf.tensor2d(newData.map(item => item.xs));
+    const predictions = model.predict(xs);
+    const predictedValues = predictions.dataSync();
+    console.log('Predictions:', predictedValues);
+    return predictedValues;
 }
 
 // Main function
-async function main() {
-    const filePath = 'food_waste_data.csv'; // Ensure this file exists with correct data
-    const rawData = await loadCSVData(filePath);
-    const { xs, ys } = prepareData(rawData);
-    
-    console.log('Training model...');
-    const model = await trainModel(xs, ys);
-    console.log('Model trained!');
-    
-    const futureYear = 2030;
-    const predictedWaste = await predictFuture(model, futureYear);
-    console.log(`Predicted food waste for ${futureYear}: ${predictedWaste}`);
+async function run() {
+    try {
+        const data = await loadData();
+        console.log('Data loaded and preprocessed:', data);
+        
+        // Split data into training and testing sets
+        const trainSize = Math.floor(data.length * 0.8);
+        const trainData = data.slice(0, trainSize);
+        const testData = data.slice(trainSize);
+        //console.log(trainData +"\n"+ testData);
+        const model = createModel();
+        
+        /*
+        await trainModel(model, trainData);
+        console.log('Model training complete');
+
+        // Evaluate the model
+        await evaluateModel(model, testData);
+
+        // Make predictions on new data
+        const newData = [
+            { xs: [1, 2, 3] }, // Replace with actual new data
+            { xs: [4, 5, 6] }  // Replace with actual new data
+        ];
+        await makePredictions(model, newData);
+        */
+    } catch (error) {
+        console.error('Error in run function:', error);
+    }
 }
 
-main().catch(console.error);
+run();
