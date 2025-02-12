@@ -8,13 +8,16 @@ async function loadData() {
             hasHeader: true,
         }).toArray();
         console.log('Data loaded successfully:', data);
+        
         // Preprocess data
         const processedData = data.map(item => {
             console.log(item); // Log feature values 
+            
             // Handle missing or invalid data
-            if (!item.year || !item.foodWaste ) {
+            if (!item.year || !item.foodWaste) {
                 throw new Error('Invalid data');
             }
+            
             return {
                 xs: [item.foodWaste], // Replace with actual feature names
                 ys: item.year // Replace with actual label name
@@ -31,14 +34,14 @@ async function loadData() {
 // Define the model
 function createModel() {
     const model = tf.sequential();
-    model.add(tf.layers.dense({ units: 32, activation: 'relu', inputShape: [3] })); // Adjust inputShape based on your features
+    model.add(tf.layers.dense({ units: 32, activation: 'relu', inputShape: [1] })); // Adjust inputShape based on your features
     model.add(tf.layers.dense({ units: 16, activation: 'relu' }));
-    model.add(tf.layers.dense({ units: 1, activation: 'sigmoid' })); // Adjust output units and activation based on your problem
+    model.add(tf.layers.dense({ units: 1, activation: 'linear' })); // Adjust output units and activation based on your problem
 
     model.compile({
         optimizer: tf.train.adam(),
-        loss: 'binaryCrossentropy', // Adjust loss function based on your problem
-        metrics: ['accuracy']
+        loss: 'meanSquaredError', // Adjust loss function based on your problem
+        metrics: ['mae']
     });
 
     return model;
@@ -63,9 +66,9 @@ async function evaluateModel(model, data) {
 
     const result = model.evaluate(xs, ys);
     const loss = result[0].dataSync();
-    const accuracy = result[1].dataSync();
+    const mae = result[1].dataSync();
 
-    console.log(`Evaluation result - Loss: ${loss}, Accuracy: ${accuracy}`);
+    console.log(`Evaluation result - Loss: ${loss}, MAE: ${mae}`);
 }
 
 // Make predictions with the model
@@ -87,11 +90,10 @@ async function run() {
         const trainSize = Math.floor(data.length * 0.8);
         const trainData = data.slice(0, trainSize);
         const testData = data.slice(trainSize);
-        //console.log(trainData +"\n"+ testData);
+
         const model = createModel();
-        
-        /*
         await trainModel(model, trainData);
+
         console.log('Model training complete');
 
         // Evaluate the model
@@ -99,11 +101,11 @@ async function run() {
 
         // Make predictions on new data
         const newData = [
-            { xs: [1, 2, 3] }, // Replace with actual new data
-            { xs: [4, 5, 6] }  // Replace with actual new data
+            { xs: [1] }, // Replace with actual new data
+            { xs: [4] }  // Replace with actual new data
         ];
         await makePredictions(model, newData);
-        */
+
     } catch (error) {
         console.error('Error in run function:', error);
     }
