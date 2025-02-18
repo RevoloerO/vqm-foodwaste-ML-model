@@ -76,7 +76,10 @@ async function makePredictions(model, newData) {
     const xs = tf.tensor2d(newData.map(item => item.xs));
     const predictions = model.predict(xs);
     const predictedValues = predictions.dataSync();
-    console.log('Predictions:', predictedValues);
+    newData.forEach((item, index) => {
+        console.log(`Input: ${item.xs}, Predicted Year: ${predictedValues[index]}`);
+    });
+
     return predictedValues;
 }
 
@@ -101,8 +104,8 @@ async function run() {
 
         // Make predictions on new data
         const newData = [
-            { xs: [1] }, // Replace with actual new data
-            { xs: [4] }  // Replace with actual new data
+            { xs: [2013] }, // Replace with actual new data
+            { xs: [2020] }  // Replace with actual new data
         ];
         await makePredictions(model, newData);
 
