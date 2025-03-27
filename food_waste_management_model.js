@@ -14,16 +14,19 @@ async function loadData() {
             console.log(item); // Log feature values 
             
             // Handle missing or invalid data
-            if (!item.year || !item.foodWaste) {
+            if (!item.year || !item.generation) {
                 throw new Error('Invalid data');
             }
             
             return {
-                xs: [item.foodWaste], // Replace with actual feature names
+                xs: [item.generation, 
+                    item.composted,
+                    item.other_food_management,
+                    item.combustion_with_energy_recovery,
+                    item.landfilled], // Replace with actual feature names
                 ys: item.year // Replace with actual label name
             };
         });
-
         return processedData;
     } catch (error) {
         console.error('Error loading or processing data:', error);
